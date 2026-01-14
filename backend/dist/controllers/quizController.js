@@ -2,7 +2,6 @@ import { Quiz } from "../models/Quiz.js";
 export const createQuiz = async (req, res) => {
     try {
         const { title, questions } = req.body;
-        // Minimal validation
         if (!title || !title.trim()) {
             res.status(400).json({ error: "Title is required" });
             return;
@@ -11,7 +10,6 @@ export const createQuiz = async (req, res) => {
             res.status(400).json({ error: "At least one question is required" });
             return;
         }
-        // Validate each question
         for (const question of questions) {
             if (!question.question || !question.question.trim()) {
                 res.status(400).json({ error: "Question text is required for all questions" });
@@ -58,7 +56,6 @@ export const createQuiz = async (req, res) => {
             questions,
         });
         const savedQuiz = await quiz.save();
-        // Ensure _id is properly serialized
         const responseData = {
             _id: savedQuiz._id.toString(),
             title: savedQuiz.title,
@@ -86,7 +83,6 @@ export const getQuiz = async (req, res) => {
             res.status(404).json({ error: "Quiz not found" });
             return;
         }
-        // Return quiz without correct answers for taking
         const quizForTaking = {
             _id: quiz._id,
             title: quiz.title,
@@ -96,7 +92,6 @@ export const getQuiz = async (req, res) => {
                 question: q.question,
                 type: q.type,
                 options: q.options,
-                // Don't include correctAnswer
             })),
             createdAt: quiz.createdAt,
             updatedAt: quiz.updatedAt,
@@ -135,11 +130,9 @@ export const submitQuiz = async (req, res) => {
             let isCorrect = false;
             // Handle different question types
             if (question.type === "mcq" || question.type === "true/false") {
-                // Exact match for MCQ and true/false
                 isCorrect = question.correctAnswer === userAnswer;
             }
             else if (question.type === "one word") {
-                // Case insensitive match for one word
                 isCorrect = question.correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
             }
             if (isCorrect) {

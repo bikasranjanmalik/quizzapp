@@ -1,30 +1,22 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-// Question Type Definitions
 export type QuestionType = "mcq" | "true/false" | "one word";
 
-// Base Question Interface - Flat structure
 export interface IQuestion {
   _id?: mongoose.Types.ObjectId;
   question: string;
   type: QuestionType;
-  // For MCQ: options array and correctAnswer as string (one of the options)
-  // For true/false: correctAnswer as string ("true" or "false"), no options needed
-  // For one word: correctAnswer as string (case insensitive match), no options needed
   options?: string[];
   correctAnswer: string;
 }
 
-// Quiz Interface
 export interface IQuiz extends Document {
   title: string;
-  description?: string; // Optional description
+  description?: string;
   questions: IQuestion[];
   createdAt: Date;
   updatedAt: Date;
 }
-
-// Question Schema - Flat and simple
 const QuestionSchema = new Schema<IQuestion>(
   {
     question: {
@@ -43,15 +35,13 @@ const QuestionSchema = new Schema<IQuestion>(
     },
     options: {
       type: [String],
-      required: false, // Only required for MCQ
+      required: false,
       validate: {
         validator: function (options: string[] | undefined) {
           const question = this as unknown as IQuestion;
-          // For MCQ: options are required and must have at least 2
           if (question.type === "mcq") {
             return options !== undefined && options.length >= 2;
           }
-          // For other types: options are not needed
           return true;
         },
         message: "MCQ questions must have at least 2 options",
@@ -63,15 +53,12 @@ const QuestionSchema = new Schema<IQuestion>(
       validate: {
         validator: function (correctAnswer: string) {
           const question = this as unknown as IQuestion;
-          // For MCQ: correctAnswer must be in options
           if (question.type === "mcq") {
             return question.options?.includes(correctAnswer) ?? false;
           }
-          // For true/false: correctAnswer must be "true" or "false"
           if (question.type === "true/false") {
             return correctAnswer === "true" || correctAnswer === "false";
           }
-          // For one word: correctAnswer must be a non-empty string
           if (question.type === "one word") {
             return typeof correctAnswer === "string" && correctAnswer.trim().length > 0;
           }
@@ -91,11 +78,10 @@ const QuestionSchema = new Schema<IQuestion>(
     },
   },
   {
-    _id: true, // Explicitly enable _id for subdocuments
+    _id: true,
   }
 );
 
-// Quiz Schema - Clean and flat
 const QuizSchema = new Schema<IQuiz>(
   {
     title: {

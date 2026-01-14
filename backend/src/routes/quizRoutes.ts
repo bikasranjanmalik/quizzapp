@@ -4,11 +4,7 @@ import { requireAdmin } from "../middleware/adminAuth.js";
 
 const router = Router();
 
-// Admin-only route: Create quiz
 router.post("/", requireAdmin, createQuiz);
-
-// Public routes: Get quiz and submit answers
-
 router.get("/:id", getQuiz);
 
 router.post("/:id/submit", submitQuiz);

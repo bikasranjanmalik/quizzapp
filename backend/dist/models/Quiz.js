@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document } from "mongoose";
-// Question Schema - Flat and simple
 const QuestionSchema = new Schema({
     question: {
         type: String,
@@ -17,15 +16,13 @@ const QuestionSchema = new Schema({
     },
     options: {
         type: [String],
-        required: false, // Only required for MCQ
+        required: false,
         validate: {
             validator: function (options) {
                 const question = this;
-                // For MCQ: options are required and must have at least 2
                 if (question.type === "mcq") {
                     return options !== undefined && options.length >= 2;
                 }
-                // For other types: options are not needed
                 return true;
             },
             message: "MCQ questions must have at least 2 options",
@@ -37,15 +34,12 @@ const QuestionSchema = new Schema({
         validate: {
             validator: function (correctAnswer) {
                 const question = this;
-                // For MCQ: correctAnswer must be in options
                 if (question.type === "mcq") {
                     return question.options?.includes(correctAnswer) ?? false;
                 }
-                // For true/false: correctAnswer must be "true" or "false"
                 if (question.type === "true/false") {
                     return correctAnswer === "true" || correctAnswer === "false";
                 }
-                // For one word: correctAnswer must be a non-empty string
                 if (question.type === "one word") {
                     return typeof correctAnswer === "string" && correctAnswer.trim().length > 0;
                 }
@@ -64,9 +58,8 @@ const QuestionSchema = new Schema({
         },
     },
 }, {
-    _id: true, // Explicitly enable _id for subdocuments
+    _id: true,
 });
-// Quiz Schema - Clean and flat
 const QuizSchema = new Schema({
     title: {
         type: String,
