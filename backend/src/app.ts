@@ -14,11 +14,22 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) {
         callback(null, true);
-      } else {
-        callback(null, true);
+        return;
       }
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      
+      if (origin.includes(".vercel.app") || origin.includes(".netlify.app")) {
+        callback(null, true);
+        return;
+      }
+      
+      callback(null, true);
     },
     credentials: true,
   })

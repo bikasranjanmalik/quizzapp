@@ -28,7 +28,20 @@ const TakeQuiz = () => {
         setQuiz(quizData);
         setAnswers(new Array(quizData.questions.length).fill(null));
       } catch (err: any) {
-        const errorMessage = err.response?.data?.error || err.message || "Failed to load quiz";
+        let errorMessage = "Failed to load quiz";
+        
+        if (err.code === "ERR_NETWORK" || err.message?.includes("Network Error")) {
+          errorMessage = "Network Error: Unable to connect to the server. Please check your internet connection and try again.";
+        } else if (err.response?.status === 404) {
+          errorMessage = "Quiz not found. Please check the Quiz ID and try again.";
+        } else if (err.response?.status === 500) {
+          errorMessage = "Server error. Please try again later.";
+        } else if (err.response?.data?.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+        
         setError(errorMessage);
       } finally {
         setIsLoading(false);
@@ -82,12 +95,15 @@ const TakeQuiz = () => {
 
   if (error && !quiz) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6">
-          <div className="text-red-600 mb-4">{error}</div>
+          <div className="text-center mb-4">
+            <div className="text-red-600 font-semibold text-lg mb-2">Network Error</div>
+            <div className="text-gray-700 text-sm">{error}</div>
+          </div>
           <button
             onClick={() => navigate("/")}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Go to Home
           </button>
