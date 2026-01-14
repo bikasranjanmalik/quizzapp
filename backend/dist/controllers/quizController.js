@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Quiz } from "../models/Quiz.js";
 export const createQuiz = async (req, res) => {
     try {
@@ -78,17 +79,22 @@ export const getQuiz = async (req, res) => {
             res.status(400).json({ error: "Quiz ID is required" });
             return;
         }
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            res.status(400).json({ error: "Invalid quiz ID format" });
+            return;
+        }
         const quiz = await Quiz.findById(id);
         if (!quiz) {
+            console.log(`Quiz not found with ID: ${id}`);
             res.status(404).json({ error: "Quiz not found" });
             return;
         }
         const quizForTaking = {
-            _id: quiz._id,
+            _id: quiz._id.toString(),
             title: quiz.title,
             description: quiz.description,
             questions: quiz.questions.map((q) => ({
-                _id: q._id,
+                _id: q._id?.toString(),
                 question: q.question,
                 type: q.type,
                 options: q.options,

@@ -28,42 +28,6 @@ database-MongoDB atlas
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import mongoose, { Schema, Document } from "mongoose";
 
 // Question Type Definitions

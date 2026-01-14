@@ -1,7 +1,7 @@
 import axios from "axios";
 import type { QuizFormData, CreateQuizResponse, QuizForTaking, QuizSubmissionResponse } from "../types/quiz";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://quizzapp-1-3yt4.onrender.com"||"http://localhost:3000";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
