@@ -205,10 +205,23 @@ const CreateQuiz = () => {
       };
 
       const response = await createQuiz(quizData);
+      
+      // Ensure we have the quiz ID - Mongoose returns _id
+      const quizId = response._id;
+      
+      if (!quizId) {
+        console.error("Quiz created but no ID returned. Response:", response);
+        setSubmitMessage({ 
+          type: "error", 
+          text: "Quiz created but ID not received. Please check the console for details."
+        });
+        return;
+      }
+      
       setSubmitMessage({ 
         type: "success", 
         text: `Quiz created successfully!`,
-        quizId: response._id
+        quizId: String(quizId) // Ensure it's a string
       });
 
       // Reset form

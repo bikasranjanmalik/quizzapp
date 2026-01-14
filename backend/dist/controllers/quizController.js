@@ -58,7 +58,16 @@ export const createQuiz = async (req, res) => {
             questions,
         });
         const savedQuiz = await quiz.save();
-        res.status(201).json(savedQuiz);
+        // Ensure _id is properly serialized
+        const responseData = {
+            _id: savedQuiz._id.toString(),
+            title: savedQuiz.title,
+            description: savedQuiz.description,
+            questions: savedQuiz.questions,
+            createdAt: savedQuiz.createdAt,
+            updatedAt: savedQuiz.updatedAt,
+        };
+        res.status(201).json(responseData);
     }
     catch (error) {
         console.error("Error creating quiz:", error);
