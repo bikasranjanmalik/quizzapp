@@ -1,10 +1,10 @@
-export type QuestionType = "mcq" | "boolean";
+export type QuestionType = "mcq" | "true/false" | "one word";
 
 export interface Question {
   question: string;
   type: QuestionType;
   options?: string[];
-  correctAnswer: string | boolean;
+  correctAnswer: string;
 }
 
 // Question without correct answer (for taking quiz)
@@ -44,8 +44,8 @@ export interface QuizForTaking {
 export interface QuizResult {
   questionIndex: number;
   question: string;
-  userAnswer: string | boolean;
-  correctAnswer: string | boolean;
+  userAnswer: string;
+  correctAnswer: string;
   isCorrect: boolean;
 }
 
@@ -57,4 +57,3 @@ export interface QuizSubmissionResponse {
   };
   results: QuizResult[];
 }
-

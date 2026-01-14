@@ -1,14 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import type { Question, QuestionType, QuizFormData } from "../types/quiz";
 import { createQuiz } from "../services/api";
 
 const CreateQuiz = () => {
+  const navigate = useNavigate();
+
+  // Check if admin is logged in
+  useEffect(() => {
+    const adminName = sessionStorage.getItem("adminName");
+    const adminPassword = sessionStorage.getItem("adminPassword");
+    
+    if (!adminName || !adminPassword) {
+      navigate("/admin/login");
+    }
+  }, [navigate]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [submitMessage, setSubmitMessage] = useState<{ type: "success" | "error"; text: string; quizId?: string } | null>(null);
 
   // Add a new question
   const addQuestion = () => {
@@ -27,7 +38,7 @@ const CreateQuiz = () => {
   };
 
   // Update question field
-  const updateQuestion = (index: number, field: keyof Question, value: string | QuestionType | string[] | boolean) => {
+  const updateQuestion = (index: number, field: keyof Question, value: string | QuestionType | string[]) => {
     const updatedQuestions = [...questions];
     updatedQuestions[index] = {
       ...updatedQuestions[index],
@@ -81,15 +92,32 @@ const CreateQuiz = () => {
 
   // Handle question type change
   const handleTypeChange = (index: number, newType: QuestionType) => {
+    const updatedQuestions = [...questions];
+    
     if (newType === "mcq") {
-      updateQuestion(index, "type", "mcq");
-      updateQuestion(index, "options", ["", ""]);
-      updateQuestion(index, "correctAnswer", "");
-    } else {
-      updateQuestion(index, "type", "boolean");
-      updateQuestion(index, "options", undefined);
-      updateQuestion(index, "correctAnswer", false);
+      updatedQuestions[index] = {
+        ...updatedQuestions[index],
+        type: "mcq",
+        options: ["", ""],
+        correctAnswer: "",
+      };
+    } else if (newType === "true/false") {
+      updatedQuestions[index] = {
+        ...updatedQuestions[index],
+        type: "true/false",
+        options: undefined,
+        correctAnswer: "true",
+      };
+    } else if (newType === "one word") {
+      updatedQuestions[index] = {
+        ...updatedQuestions[index],
+        type: "one word",
+        options: undefined,
+        correctAnswer: "",
+      };
     }
+    
+    setQuestions(updatedQuestions);
   };
 
   // Validate form
@@ -126,9 +154,16 @@ const CreateQuiz = () => {
         if (!q.options.includes(q.correctAnswer)) {
           return `Question ${i + 1}: Correct answer must be one of the options`;
         }
-      } else {
-        if (typeof q.correctAnswer !== "boolean") {
+      } else if (q.type === "true/false") {
+        if (!q.correctAnswer || typeof q.correctAnswer !== "string") {
           return `Question ${i + 1}: Please select a correct answer (true or false)`;
+        }
+        if (q.correctAnswer !== "true" && q.correctAnswer !== "false") {
+          return `Question ${i + 1}: Correct answer must be 'true' or 'false'`;
+        }
+      } else if (q.type === "one word") {
+        if (!q.correctAnswer || typeof q.correctAnswer !== "string" || !q.correctAnswer.trim()) {
+          return `Question ${i + 1}: Please provide a correct answer`;
         }
       }
     }
@@ -153,12 +188,20 @@ const CreateQuiz = () => {
       const quizData: QuizFormData = {
         title: title.trim(),
         description: description.trim() || undefined,
-        questions: questions.map(q => ({
-          question: q.question.trim(),
-          type: q.type,
-          options: q.type === "mcq" ? q.options : undefined,
-          correctAnswer: q.correctAnswer,
-        })),
+        questions: questions.map(q => {
+          const baseQuestion = {
+            question: q.question.trim(),
+            type: q.type,
+            correctAnswer: q.correctAnswer,
+          };
+          
+          // Only include options for MCQ questions
+          if (q.type === "mcq" && q.options) {
+            return { ...baseQuestion, options: q.options };
+          }
+          
+          return baseQuestion;
+        }),
       };
 
       const response = await createQuiz(quizData);
@@ -173,6 +216,14 @@ const CreateQuiz = () => {
       setDescription("");
       setQuestions([]);
     } catch (error: any) {
+      // Handle authentication errors
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        sessionStorage.removeItem("adminName");
+        sessionStorage.removeItem("adminPassword");
+        navigate("/admin/login");
+        return;
+      }
+      
       const errorMessage = error.response?.data?.error || error.message || "Failed to create quiz";
       setSubmitMessage({ type: "error", text: errorMessage });
     } finally {
@@ -254,7 +305,8 @@ const CreateQuiz = () => {
                     required
                   >
                     <option value="mcq">Multiple Choice (MCQ)</option>
-                    <option value="boolean">True/False</option>
+                    <option value="true/false">True/False</option>
+                    <option value="one word">One Word</option>
                   </select>
                 </div>
 
@@ -304,17 +356,17 @@ const CreateQuiz = () => {
                   </div>
                 )}
 
-                {/* Boolean Answer */}
-                {question.type === "boolean" && (
+                {/* True/False Answer */}
+                {question.type === "true/false" && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Correct Answer *</label>
                     <div className="flex gap-6">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
-                          name={`boolean-${questionIndex}`}
-                          checked={question.correctAnswer === true}
-                          onChange={() => updateQuestion(questionIndex, "correctAnswer", true)}
+                          name={`truefalse-${questionIndex}`}
+                          checked={question.correctAnswer === "true"}
+                          onChange={() => updateQuestion(questionIndex, "correctAnswer", "true")}
                           className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                           required
                         />
@@ -323,15 +375,34 @@ const CreateQuiz = () => {
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
-                          name={`boolean-${questionIndex}`}
-                          checked={question.correctAnswer === false}
-                          onChange={() => updateQuestion(questionIndex, "correctAnswer", false)}
+                          name={`truefalse-${questionIndex}`}
+                          checked={question.correctAnswer === "false"}
+                          onChange={() => updateQuestion(questionIndex, "correctAnswer", "false")}
                           className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                           required
                         />
                         <span className="text-gray-700">False</span>
                       </label>
                     </div>
+                  </div>
+                )}
+
+                {/* One Word Answer */}
+                {question.type === "one word" && (
+                  <div>
+                    <label htmlFor={`correctAnswer-${questionIndex}`} className="block text-sm font-medium text-gray-700 mb-2">
+                      Correct Answer (One Word) *
+                    </label>
+                    <input
+                      id={`correctAnswer-${questionIndex}`}
+                      type="text"
+                      value={question.correctAnswer}
+                      onChange={(e) => updateQuestion(questionIndex, "correctAnswer", e.target.value)}
+                      placeholder="Enter correct answer"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Answer will be matched case-insensitively</p>
                   </div>
                 )}
 

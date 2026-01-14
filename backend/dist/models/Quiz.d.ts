@@ -1,11 +1,11 @@
 import mongoose, { Document } from "mongoose";
-export type QuestionType = "mcq" | "boolean";
+export type QuestionType = "mcq" | "true/false" | "one word";
 export interface IQuestion {
     _id?: mongoose.Types.ObjectId;
     question: string;
     type: QuestionType;
     options?: string[];
-    correctAnswer: string | boolean;
+    correctAnswer: string;
 }
 export interface IQuiz extends Document {
     title: string;

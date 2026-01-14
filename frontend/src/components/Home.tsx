@@ -50,10 +50,10 @@ const Home = () => {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Admin</h2>
           <Link
-            to="/admin"
+            to="/admin/login"
             className="block w-full px-6 py-3 bg-gray-600 text-white font-medium rounded-md hover:bg-gray-700 text-center focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
           >
-            Create New Quiz
+            Admin Login
           </Link>
         </div>
       </div>

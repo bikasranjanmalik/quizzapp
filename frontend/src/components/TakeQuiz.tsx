@@ -7,7 +7,7 @@ const TakeQuiz = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [quiz, setQuiz] = useState<QuizForTaking | null>(null);
-  const [answers, setAnswers] = useState<(string | boolean | null)[]>([]);
+  const [answers, setAnswers] = useState<(string | null)[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [results, setResults] = useState<QuizSubmissionResponse | null>(null);
@@ -38,7 +38,7 @@ const TakeQuiz = () => {
     fetchQuiz();
   }, [id]);
 
-  const handleAnswerChange = (questionIndex: number, answer: string | boolean) => {
+  const handleAnswerChange = (questionIndex: number, answer: string) => {
     const newAnswers = [...answers];
     newAnswers[questionIndex] = answer;
     setAnswers(newAnswers);
@@ -60,7 +60,7 @@ const TakeQuiz = () => {
     setError(null);
 
     try {
-      const submissionResults = await submitQuiz(id, answers as (string | boolean)[]);
+      const submissionResults = await submitQuiz(id, answers as string[]);
       setResults(submissionResults);
     } catch (err: any) {
       const errorMessage = err.response?.data?.error || err.message || "Failed to submit quiz";
@@ -227,15 +227,16 @@ const TakeQuiz = () => {
                   </div>
                 )}
 
-                {/* Boolean Questions */}
-                {question.type === "boolean" && (
+                {/* True/False Questions */}
+                {question.type === "true/false" && (
                   <div className="flex gap-6">
                     <label className="flex items-center gap-2 p-3 border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer flex-1">
                       <input
                         type="radio"
                         name={`question-${questionIndex}`}
-                        checked={answers[questionIndex] === true}
-                        onChange={() => handleAnswerChange(questionIndex, true)}
+                        value="true"
+                        checked={answers[questionIndex] === "true"}
+                        onChange={() => handleAnswerChange(questionIndex, "true")}
                         className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                         required
                       />
@@ -245,13 +246,29 @@ const TakeQuiz = () => {
                       <input
                         type="radio"
                         name={`question-${questionIndex}`}
-                        checked={answers[questionIndex] === false}
-                        onChange={() => handleAnswerChange(questionIndex, false)}
+                        value="false"
+                        checked={answers[questionIndex] === "false"}
+                        onChange={() => handleAnswerChange(questionIndex, "false")}
                         className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                         required
                       />
                       <span className="text-gray-700 font-medium">False</span>
                     </label>
+                  </div>
+                )}
+
+                {/* One Word Questions */}
+                {question.type === "one word" && (
+                  <div>
+                    <input
+                      type="text"
+                      value={answers[questionIndex] || ""}
+                      onChange={(e) => handleAnswerChange(questionIndex, e.target.value)}
+                      placeholder="Enter your answer (one word)"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Answer will be matched case-insensitively</p>
                   </div>
                 )}
               </div>

@@ -6,7 +6,7 @@ interface CreateQuizRequest {
     questions: IQuestion[];
 }
 interface SubmitAnswerRequest {
-    answers: (string | boolean)[];
+    answers: string[];
 }
 export declare const createQuiz: (req: Request<{}, {}, CreateQuizRequest>, res: Response) => Promise<void>;
 export declare const getQuiz: (req: Request<{

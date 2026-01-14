@@ -10,14 +10,14 @@ const QuestionSchema = new Schema({
     type: {
         type: String,
         enum: {
-            values: ["mcq", "boolean"],
-            message: "Question type must be either 'mcq' or 'boolean'",
+            values: ["mcq", "true/false", "one word"],
+            message: "Question type must be 'mcq', 'true/false', or 'one word'",
         },
         required: [true, "Question type is required"],
     },
     options: {
         type: [String],
-        required: false, // Not always required, validated conditionally
+        required: false, // Only required for MCQ
         validate: {
             validator: function (options) {
                 const question = this;
@@ -25,37 +25,41 @@ const QuestionSchema = new Schema({
                 if (question.type === "mcq") {
                     return options !== undefined && options.length >= 2;
                 }
-                // For Boolean: options are not needed
+                // For other types: options are not needed
                 return true;
             },
             message: "MCQ questions must have at least 2 options",
         },
     },
     correctAnswer: {
-        type: Schema.Types.Mixed,
+        type: String,
         required: [true, "Correct answer is required"],
         validate: {
             validator: function (correctAnswer) {
                 const question = this;
-                // For MCQ: correctAnswer must be a string and must be in options
+                // For MCQ: correctAnswer must be in options
                 if (question.type === "mcq") {
-                    if (typeof correctAnswer !== "string") {
-                        return false;
-                    }
                     return question.options?.includes(correctAnswer) ?? false;
                 }
-                // For Boolean: correctAnswer must be a boolean
-                if (question.type === "boolean") {
-                    return typeof correctAnswer === "boolean";
+                // For true/false: correctAnswer must be "true" or "false"
+                if (question.type === "true/false") {
+                    return correctAnswer === "true" || correctAnswer === "false";
+                }
+                // For one word: correctAnswer must be a non-empty string
+                if (question.type === "one word") {
+                    return typeof correctAnswer === "string" && correctAnswer.trim().length > 0;
                 }
                 return false;
             },
             message: function () {
                 const question = this;
                 if (question.type === "mcq") {
-                    return "MCQ correct answer must be a string that matches one of the options";
+                    return "MCQ correct answer must match one of the options";
                 }
-                return "Boolean correct answer must be true or false";
+                if (question.type === "true/false") {
+                    return "True/false correct answer must be 'true' or 'false'";
+                }
+                return "One word correct answer must be a non-empty string";
             },
         },
     },

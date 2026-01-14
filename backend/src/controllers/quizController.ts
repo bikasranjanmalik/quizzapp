@@ -9,7 +9,7 @@ interface CreateQuizRequest {
 }
 
 interface SubmitAnswerRequest {
-  answers: (string | boolean)[];
+  answers: string[];
 }
 
 export const createQuiz = async (
@@ -37,8 +37,8 @@ export const createQuiz = async (
         return;
       }
 
-      if (!question.type || !["mcq", "boolean"].includes(question.type)) {
-        res.status(400).json({ error: "Question type must be 'mcq' or 'boolean'" });
+      if (!question.type || !["mcq", "true/false", "one word"].includes(question.type)) {
+        res.status(400).json({ error: "Question type must be 'mcq', 'true/false', or 'one word'" });
         return;
       }
 
@@ -55,9 +55,18 @@ export const createQuiz = async (
           res.status(400).json({ error: "Correct answer must be one of the options" });
           return;
         }
-      } else {
-        if (typeof question.correctAnswer !== "boolean") {
-          res.status(400).json({ error: "Boolean questions must have a boolean correctAnswer" });
+      } else if (question.type === "true/false") {
+        if (typeof question.correctAnswer !== "string") {
+          res.status(400).json({ error: "True/false correctAnswer must be a string" });
+          return;
+        }
+        if (question.correctAnswer !== "true" && question.correctAnswer !== "false") {
+          res.status(400).json({ error: "True/false correctAnswer must be 'true' or 'false'" });
+          return;
+        }
+      } else if (question.type === "one word") {
+        if (typeof question.correctAnswer !== "string" || !question.correctAnswer.trim()) {
+          res.status(400).json({ error: "One word correctAnswer must be a non-empty string" });
           return;
         }
       }
@@ -151,8 +160,17 @@ export const submitQuiz = async (
 
     let correctCount = 0;
     const results = quiz.questions.map((question, index) => {
-      const userAnswer = answers[index];
-      const isCorrect = question.correctAnswer === userAnswer;
+      const userAnswer = answers[index] || "";
+      let isCorrect = false;
+
+      // Handle different question types
+      if (question.type === "mcq" || question.type === "true/false") {
+        // Exact match for MCQ and true/false
+        isCorrect = question.correctAnswer === userAnswer;
+      } else if (question.type === "one word") {
+        // Case insensitive match for one word
+        isCorrect = question.correctAnswer.trim().toLowerCase() === userAnswer.trim().toLowerCase();
+      }
       
       if (isCorrect) {
         correctCount++;

@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './components/Home'
+import AdminLogin from './components/AdminLogin'
 import CreateQuiz from './components/CreateQuiz'
 import TakeQuiz from './components/TakeQuiz'
 
@@ -8,6 +9,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<CreateQuiz />} />
         <Route path="/quiz/:id" element={<TakeQuiz />} />
       </Routes>

@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 // Question Type Definitions
-export type QuestionType = "mcq" | "boolean";
+export type QuestionType = "mcq" | "true/false" | "one word";
 
 // Base Question Interface - Flat structure
 export interface IQuestion {
@@ -9,9 +9,10 @@ export interface IQuestion {
   question: string;
   type: QuestionType;
   // For MCQ: options array and correctAnswer as string (one of the options)
-  // For Boolean: correctAnswer as boolean, options can be undefined
+  // For true/false: correctAnswer as string ("true" or "false"), no options needed
+  // For one word: correctAnswer as string (case insensitive match), no options needed
   options?: string[];
-  correctAnswer: string | boolean;
+  correctAnswer: string;
 }
 
 // Quiz Interface
@@ -35,14 +36,14 @@ const QuestionSchema = new Schema<IQuestion>(
     type: {
       type: String,
       enum: {
-        values: ["mcq", "boolean"],
-        message: "Question type must be either 'mcq' or 'boolean'",
+        values: ["mcq", "true/false", "one word"],
+        message: "Question type must be 'mcq', 'true/false', or 'one word'",
       },
       required: [true, "Question type is required"],
     },
     options: {
       type: [String],
-      required: false, // Not always required, validated conditionally
+      required: false, // Only required for MCQ
       validate: {
         validator: function (options: string[] | undefined) {
           const question = this as unknown as IQuestion;
@@ -50,37 +51,41 @@ const QuestionSchema = new Schema<IQuestion>(
           if (question.type === "mcq") {
             return options !== undefined && options.length >= 2;
           }
-          // For Boolean: options are not needed
+          // For other types: options are not needed
           return true;
         },
         message: "MCQ questions must have at least 2 options",
       },
     },
     correctAnswer: {
-      type: Schema.Types.Mixed,
+      type: String,
       required: [true, "Correct answer is required"],
       validate: {
-        validator: function (correctAnswer: string | boolean) {
+        validator: function (correctAnswer: string) {
           const question = this as unknown as IQuestion;
-          // For MCQ: correctAnswer must be a string and must be in options
+          // For MCQ: correctAnswer must be in options
           if (question.type === "mcq") {
-            if (typeof correctAnswer !== "string") {
-              return false;
-            }
             return question.options?.includes(correctAnswer) ?? false;
           }
-          // For Boolean: correctAnswer must be a boolean
-          if (question.type === "boolean") {
-            return typeof correctAnswer === "boolean";
+          // For true/false: correctAnswer must be "true" or "false"
+          if (question.type === "true/false") {
+            return correctAnswer === "true" || correctAnswer === "false";
+          }
+          // For one word: correctAnswer must be a non-empty string
+          if (question.type === "one word") {
+            return typeof correctAnswer === "string" && correctAnswer.trim().length > 0;
           }
           return false;
         },
         message: function (this: unknown) {
           const question = this as unknown as IQuestion;
           if (question.type === "mcq") {
-            return "MCQ correct answer must be a string that matches one of the options";
+            return "MCQ correct answer must match one of the options";
           }
-          return "Boolean correct answer must be true or false";
+          if (question.type === "true/false") {
+            return "True/false correct answer must be 'true' or 'false'";
+          }
+          return "One word correct answer must be a non-empty string";
         },
       },
     },
@@ -122,4 +127,5 @@ const QuizSchema = new Schema<IQuiz>(
 
 // Create and export the model
 export const Quiz = mongoose.model<IQuiz>("Quiz", QuizSchema);
+
 

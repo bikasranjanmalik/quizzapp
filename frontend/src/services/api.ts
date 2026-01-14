@@ -10,8 +10,24 @@ const api = axios.create({
   },
 });
 
+// Get admin credentials from sessionStorage
+const getAdminHeaders = () => {
+  const adminName = sessionStorage.getItem("adminName");
+  const adminPassword = sessionStorage.getItem("adminPassword");
+  
+  if (adminName && adminPassword) {
+    return {
+      "x-admin-name": adminName,
+      "x-admin-password": adminPassword,
+    };
+  }
+  return {};
+};
+
 export const createQuiz = async (quizData: QuizFormData): Promise<CreateQuizResponse> => {
-  const response = await api.post<CreateQuizResponse>("/api/quizzes", quizData);
+  const response = await api.post<CreateQuizResponse>("/api/quizzes", quizData, {
+    headers: getAdminHeaders(),
+  });
   return response.data;
 };
 
@@ -20,7 +36,7 @@ export const getQuiz = async (id: string): Promise<QuizForTaking> => {
   return response.data;
 };
 
-export const submitQuiz = async (id: string, answers: (string | boolean)[]): Promise<QuizSubmissionResponse> => {
+export const submitQuiz = async (id: string, answers: string[]): Promise<QuizSubmissionResponse> => {
   const response = await api.post<QuizSubmissionResponse>(`/api/quizzes/${id}/submit`, { answers });
   return response.data;
 };
