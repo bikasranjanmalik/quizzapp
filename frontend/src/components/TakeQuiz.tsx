@@ -33,11 +33,14 @@ const TakeQuiz = () => {
         if (err.code === "ERR_NETWORK" || err.message?.includes("Network Error")) {
           errorMessage = "Network Error: Unable to connect to the server. Please check your internet connection and try again.";
         } else if (err.response?.status === 404) {
-          errorMessage = "Quiz not found. Please check the Quiz ID and try again.";
+          const backendMessage = err.response?.data?.message || err.response?.data?.error;
+          errorMessage = backendMessage || "Quiz not found. This quiz ID does not exist in the database. Please create a quiz first using the admin panel or use a valid quiz ID.";
         } else if (err.response?.status === 500) {
           errorMessage = "Server error. Please try again later.";
         } else if (err.response?.data?.error) {
           errorMessage = err.response.data.error;
+        } else if (err.response?.data?.message) {
+          errorMessage = err.response.data.message;
         } else if (err.message) {
           errorMessage = err.message;
         }

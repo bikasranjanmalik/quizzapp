@@ -85,8 +85,19 @@ export const getQuiz = async (req, res) => {
         }
         const quiz = await Quiz.findById(id);
         if (!quiz) {
+            const totalQuizzes = await Quiz.countDocuments();
+            const dbName = mongoose.connection.db?.databaseName;
+            const collectionName = Quiz.collection.name;
             console.log(`Quiz not found with ID: ${id}`);
-            res.status(404).json({ error: "Quiz not found" });
+            console.log(`Database: ${dbName}, Collection: ${collectionName}`);
+            console.log(`Total quizzes in database: ${totalQuizzes}`);
+            // Try to find the quiz with a different query for debugging
+            const allQuizIds = await Quiz.find({}, { _id: 1 }).limit(10);
+            console.log("Sample quiz IDs in database:", allQuizIds.map(q => q._id.toString()));
+            res.status(404).json({
+                error: "Quiz not found",
+                message: `The quiz with ID ${id} does not exist in the database. Database: ${dbName}, Collection: ${collectionName}, Total quizzes: ${totalQuizzes}`
+            });
             return;
         }
         const quizForTaking = {
@@ -107,6 +118,24 @@ export const getQuiz = async (req, res) => {
     catch (error) {
         console.error("Error fetching quiz:", error);
         res.status(500).json({ error: "Failed to fetch quiz" });
+    }
+};
+export const listQuizzes = async (req, res) => {
+    try {
+        const quizzes = await Quiz.find({}, { title: 1, _id: 1, createdAt: 1 }).sort({ createdAt: -1 });
+        const quizList = quizzes.map(quiz => ({
+            _id: quiz._id.toString(),
+            title: quiz.title,
+            createdAt: quiz.createdAt,
+        }));
+        res.json({
+            count: quizList.length,
+            quizzes: quizList,
+        });
+    }
+    catch (error) {
+        console.error("Error listing quizzes:", error);
+        res.status(500).json({ error: "Failed to list quizzes" });
     }
 };
 export const submitQuiz = async (req, res) => {
